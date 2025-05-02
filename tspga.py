@@ -87,15 +87,15 @@ st.set_page_config(layout="wide")
 if 'num_vertices' not in st.session_state:
     st.session_state.num_vertices = 7
 if 'dist_matrix' not in st.session_state:
-    st.session_state.dist_matrix = np.array(
-    [0,  2,  3,  4,  1,  37, 20],
-    [2,  0,  2,  3,  7,  25, 37],
-    [3,  3,  0,  3,  2,  23, 29],
-    [3,  3,  2,  0,  2,  38, 22],
-    [2,  2,  1,  2,  0,  15, 42],
-    [28, 31, 13, 9, 22, 0,  42],
-    [7, 37, 15, 33, 40, 34, 0]
-    )
+    st.session_state.dist_matrix = np.array([
+        [0,  2,  3,  4,  1,  37, 20],
+        [2,  0,  2,  3,  7,  25, 37],
+        [3,  3,  0,  3,  2,  23, 29],
+        [3,  3,  2,  0,  2,  38, 22],
+        [2,  2,  1,  2,  0,  15, 42],
+        [28, 31, 13, 9, 22, 0,  42],
+        [7, 37, 15, 33, 40, 34, 0]
+    ], dtype=float)
 if 'graph' not in st.session_state:
     st.session_state.graph = None
 if 'best_path' not in st.session_state:
