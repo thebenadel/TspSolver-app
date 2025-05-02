@@ -85,9 +85,17 @@ st.set_page_config(layout="wide")
 
 # Initialize session state
 if 'num_vertices' not in st.session_state:
-    st.session_state.num_vertices = 5
+    st.session_state.num_vertices = 7
 if 'dist_matrix' not in st.session_state:
-    st.session_state.dist_matrix = np.zeros((5, 5))
+    st.session_state.dist_matrix = np.array(
+    [0,  2,  3,  4,  1,  37, 20],
+    [2,  0,  2,  3,  7,  25, 37],
+    [3,  3,  0,  3,  2,  23, 29],
+    [3,  3,  2,  0,  2,  38, 22],
+    [2,  2,  1,  2,  0,  15, 42],
+    [28, 31, 13, 9, 22, 0,  42],
+    [7, 37, 15, 33, 40, 34, 0]
+    )
 if 'graph' not in st.session_state:
     st.session_state.graph = None
 if 'best_path' not in st.session_state:
@@ -208,5 +216,4 @@ st.sidebar.markdown("""
 - NxN numeric matrix (N = selected vertex count)
 - Diagonal elements must be 0
 - All other elements must be positive
-- Matrix should be symmetric
 """)
