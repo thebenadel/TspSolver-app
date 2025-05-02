@@ -152,7 +152,7 @@ mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.1)
 start_node = st.sidebar.selectbox("Start Node", options=list(range(num_vertices)), format_func=lambda x: f"Node {x}")
 
 # Main interface
-st.header("Traveling Salesman Problem Solver")
+st.header("Traveling Salesman Problem Solver - PFE Project")
 
 # Visualization
 if st.session_state.graph:
