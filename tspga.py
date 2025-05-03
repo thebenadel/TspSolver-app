@@ -106,8 +106,8 @@ if 'best_distance' not in st.session_state:
 # Sidebar controls
 st.sidebar.header("TSP Configuration")
 
-# Vertex count selector
-num_vertices = st.sidebar.slider("Number of Vertices", 2, 10, 7)
+# Vertex count selector - Changed from slider to number_input
+num_vertices = st.sidebar.number_input("Number of Vertices", min_value=2, value=7, step=1)
 if num_vertices != st.session_state.num_vertices:
     st.session_state.num_vertices = num_vertices
     st.session_state.dist_matrix = np.zeros((num_vertices, num_vertices))
