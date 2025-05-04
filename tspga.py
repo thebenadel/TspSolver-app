@@ -301,7 +301,6 @@ st.sidebar.markdown("""
 - NxN numeric matrix (N = selected vertex count)
 - Diagonal elements must be 0
 - All other elements must be positive
-- Matrix should be symmetric (undirected graphs)
 """)
 
 # Performance warning
