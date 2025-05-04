@@ -1,8 +1,8 @@
 import streamlit as st
 import networkx as nx
-import matplotlib.pyplot as plt
 import numpy as np
 import random
+import plotly.graph_objects as go
 
 # ===================== Genetic Algorithm Functions ===================== #
 def generate_initial_population(pop_size, n, start_node):
@@ -80,8 +80,100 @@ def genetic_algorithm(dist_matrix, start_node, generations=500, pop_size=100, mu
     status_text.empty()
     return best_path, best_fitness
 
+# ===================== Plotly Visualization ===================== #
+def plotly_tsp_graph(G, best_path=None):
+    """Create interactive Plotly visualization for TSP"""
+    pos = nx.spring_layout(G, seed=42)
+    
+    edge_traces = []
+    node_x = []
+    node_y = []
+    node_text = []
+    
+    # Add all edges
+    edge_x = []
+    edge_y = []
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+    
+    edge_traces.append(go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='none',
+        mode='lines'
+    ))
+    
+    # Add optimal path if available
+    if best_path:
+        path_edges = list(zip(best_path, best_path[1:] + [best_path[0]]))
+        path_x = []
+        path_y = []
+        for edge in path_edges:
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            path_x.extend([x0, x1, None])
+            path_y.extend([y0, y1, None])
+        
+        edge_traces.append(go.Scatter(
+            x=path_x, y=path_y,
+            line=dict(width=2, color='red'),
+            mode='lines',
+            name='Optimal Path'
+        ))
+    
+    # Add nodes
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(f'Node {node}')
+    
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        text=node_text,
+        textposition="top center",
+        hoverinfo='text',
+        marker=dict(
+            showscale=False,
+            color='lightblue',
+            size=20,
+            line=dict(width=1, color='darkblue')
+        )
+    )
+    
+    # Create figure
+    fig = go.Figure(
+        data=edge_traces + [node_trace],
+        layout=go.Layout(
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=0,l=0,r=0,t=0),
+            xaxis=dict(showgrid=False, zeroline=False, visible=False),
+            yaxis=dict(showgrid=False, zeroline=False, visible=False),
+            uirevision='constant'
+        )
+    )
+    
+    # Add edge weight labels
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        fig.add_annotation(
+            x=(x0+x1)/2,
+            y=(y0+y1)/2,
+            text=str(edge[2]['weight']),
+            showarrow=False,
+            font=dict(size=8)
+        )
+    
+    return fig
+
 # ===================== Streamlit App ===================== #
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="TSP Solver", layout="wide")
 
 # Initialize session state
 if 'num_vertices' not in st.session_state:
@@ -106,7 +198,7 @@ if 'best_distance' not in st.session_state:
 # Sidebar controls
 st.sidebar.header("TSP Configuration")
 
-# Vertex count selector - Changed from slider to number_input
+# Vertex count selector
 num_vertices = st.sidebar.number_input("Number of Vertices", min_value=2, value=7, step=1)
 if num_vertices != st.session_state.num_vertices:
     st.session_state.num_vertices = num_vertices
@@ -114,7 +206,7 @@ if num_vertices != st.session_state.num_vertices:
     st.session_state.graph = None
     st.session_state.best_path = None
 
-# Matrix input with automatic parsing
+# Matrix input
 st.sidebar.subheader("Distance Matrix Input")
 matrix_input = st.sidebar.text_area(
     f"Edit matrix ({num_vertices}x{num_vertices}):",
@@ -123,17 +215,25 @@ matrix_input = st.sidebar.text_area(
     key="matrix_editor"
 )
 
-# Auto-update matrix when edited
+# Matrix validation
 try:
     new_matrix = eval(matrix_input)
-    if isinstance(new_matrix, list) and len(new_matrix) == num_vertices and all(len(row) == num_vertices for row in new_matrix):
-        if all(new_matrix[i][i] == 0 for i in range(num_vertices)):
-            if not np.array_equal(st.session_state.dist_matrix, new_matrix):
-                st.session_state.dist_matrix = np.array(new_matrix, dtype=float)
-                st.session_state.graph = None
-                st.session_state.best_path = None
+    if isinstance(new_matrix, list) and len(new_matrix) == num_vertices:
+        valid = True
+        for row in new_matrix:
+            if len(row) != num_vertices:
+                valid = False
+                break
+        if valid:
+            if all(new_matrix[i][i] == 0 for i in range(num_vertices)):
+                if not np.array_equal(st.session_state.dist_matrix, new_matrix):
+                    st.session_state.dist_matrix = np.array(new_matrix, dtype=float)
+                    st.session_state.graph = None
+                    st.session_state.best_path = None
+            else:
+                st.sidebar.error("Diagonal elements must be 0")
         else:
-            st.sidebar.error("Diagonal elements must be 0")
+            st.sidebar.error(f"Matrix must be {num_vertices}x{num_vertices}")
     else:
         st.sidebar.error(f"Matrix must be {num_vertices}x{num_vertices}")
 except Exception as e:
@@ -164,26 +264,11 @@ st.header("Traveling Salesman Problem Solver - PFE Project")
 
 # Visualization
 if st.session_state.graph:
-    fig, ax = plt.subplots(figsize=(10, 8))
-    pos = nx.spring_layout(st.session_state.graph)
-    
-    # Draw base graph
-    nx.draw_networkx_nodes(st.session_state.graph, pos, node_color='lightblue', node_size=500)
-    nx.draw_networkx_labels(st.session_state.graph, pos)
-    nx.draw_networkx_edges(st.session_state.graph, pos, edge_color='gray', alpha=0.3)
-    
-    # Draw best path if available
-    if st.session_state.best_path:
-        path_edges = list(zip(st.session_state.best_path, st.session_state.best_path[1:] + [st.session_state.best_path[0]]))
-        nx.draw_networkx_edges(st.session_state.graph, pos, edgelist=path_edges, 
-                              edge_color='red', width=2)
-    
-    # Draw edge labels
-    edge_labels = nx.get_edge_attributes(st.session_state.graph, 'weight')
-    nx.draw_networkx_edge_labels(st.session_state.graph, pos, edge_labels=edge_labels)
-    
-    plt.title("TSP Graph Visualization")
-    st.pyplot(fig)
+    fig = plotly_tsp_graph(
+        st.session_state.graph,
+        best_path=st.session_state.best_path
+    )
+    st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Generate graph to see visualization")
 
@@ -216,4 +301,9 @@ st.sidebar.markdown("""
 - NxN numeric matrix (N = selected vertex count)
 - Diagonal elements must be 0
 - All other elements must be positive
+- Matrix should be symmetric (undirected graphs)
 """)
+
+# Performance warning
+if num_vertices > 15:
+    st.sidebar.warning("Performance may degrade for graphs with more than 15 nodes")
