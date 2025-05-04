@@ -3,3 +3,4 @@ numpy>=1.26.0
 networkx>=3.2
 matplotlib>=3.7.0
 scipy>=1.11.0  # Required for NetworkX's spring_layout
+plotly
